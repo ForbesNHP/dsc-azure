@@ -1,0 +1,219 @@
+select
+'595022252' +  case when  IT.INVENTLOCATIONID  is null then s.siteid  else  IT.INVENTLOCATIONID end "Ship From Distributor DUNS+4",
+'595022252' + case when s.siteid = 'MB' then 'ME'
+when s.siteid = 'ZZ' then 'ME'  else s.siteid end "Report From Dist. DUNS +4",
+c.Name "Bill To Customer Name",
+case charindex(char(10), a.Street)
+   when 0 then a.Street
+   else left(a.Street, charindex(char(10), a.Street) - 1)
+   end as    "Bill To Address 1" ,
+case when a.ZIPCODE in ('9999',  ' ', '') then   
+   case charindex(char(10), a.Street) when 0 then '' else
+     case when charindex(char(10), a.Street) = len(a.street) then '' else  
+        case charindex(char(10), substring(a.Street, charindex(char(10), a.Street) + 1, (LEN(a.street) - charindex(char(10), a.Street))) )
+             when 0 then substring(a.Street, charindex(char(10), a.Street) + 1, (LEN(a.street) - charindex(char(10), a.Street)))
+             else  left(substring(a.Street, charindex(char(10), a.Street) + 1, (LEN(a.street) - charindex(char(10), a.Street))),
+                  charindex(char(10), substring(a.Street, charindex(char(10), a.Street) + 1, (LEN(a.street) - charindex(char(10), a.Street))) )-1)
+        end
+     end
+   end
+ else  a.COUNTY end  as  "Bill To Address 2" ,
+ a.City "Bill To City",
+ a.State  "Bill To Region/State",
+ a.ZipCode "Bill To Postal Code",
+ a.CountryRegionId  "Bill To Country",
+CIJ.InvoiceAccount "Bill To Customer Acct. Number",
+'' "Bill To National ID",
+c.NRABPID  "Bill To  RA Customer ID",
+'' "Bill To Dist. Contact",
+CIJ.DeliveryName "Ship To Customer Name",
+case charindex(char(10), CIJ.DeliveryStreet)
+   when 0 then CIJ.DeliveryStreet
+   else left(CIJ.DeliveryStreet, charindex(char(10), CIJ.DeliveryStreet) - 1)
+   end as   "Ship To Address 1" ,
+case when CIJ.DLVZIPCODE in ('9999',  ' ', '') then   
+   case charindex(char(10), CIJ.DeliveryStreet) when 0 then '' else
+     case when charindex(char(10), CIJ.DeliveryStreet) = len(CIJ.DeliveryStreet) then '' else  
+        case charindex(char(10), substring(CIJ.DeliveryStreet, charindex(char(10), CIJ.DeliveryStreet) + 1, (LEN(CIJ.DeliveryStreet) - charindex(char(10), CIJ.DeliveryStreet))) )
+             when 0 then substring(CIJ.DeliveryStreet, charindex(char(10), CIJ.DeliveryStreet) + 1, (LEN(CIJ.DeliveryStreet) - charindex(char(10), CIJ.DeliveryStreet)))
+             else  left(substring(CIJ.DeliveryStreet, charindex(char(10), CIJ.DeliveryStreet) + 1, (LEN(CIJ.DeliveryStreet) - charindex(char(10), CIJ.DeliveryStreet))),
+                  charindex(char(10), substring(CIJ.DeliveryStreet, charindex(char(10), CIJ.DeliveryStreet) + 1, (LEN(CIJ.DeliveryStreet) - charindex(char(10), CIJ.DeliveryStreet))) )-1)
+        end
+     end
+   end
+ else  CIJ.DLVCOUNTY end  as   "Ship To Address 2" ,
+CIJ.DeliveryCity  "Ship To City",
+CIJ.DLVState  "Ship To Region/State",
+CIJ.DLVZipCode  "Ship To Postal Code",
+CIJ.DLVCountryRegionId  "Ship To Country",
+CIJ.ORDERACCOUNT  "Ship To Customer Acct. Number",
+'' "Ship To National ID",
+co.NRABPID  "SHIP_RA_CUST_ID",
+'' "Ship To Dist. Contact",
+'' "Vendor's Part Number",
+case when vi.ExternalItemId is null then  cit.itemid  else vi.ExternalItemId end   "Vendor's Catalog Number",
+'' "Buyer's Part Number",
+'' "UPC (14 digit) - GTIN",
+replace(replace(replace(replace(sl.name,'"',' '),'~',' '),Char(13),' '),char(10), ' ')  "Part Number Description",                                
+'' "Product Code",
+'' "Serial Number",
+cit.Qty "Quantity",
+CASE when K.ISKIT IS null then cit.LINEAMOUNTMST when K.ISKIT = 1 then 0
+   else case when it.CostAmountPosted is null then 0    
+      else case when KitCompCost = 0 then 0
+        else KitSales/KitCompCost*it.CostAmountPosted end  end  end "Extended ReSale",
+case when it.CostAmountPosted is null then 0
+     else CASE when K.ISKIT IS null then 
+         CASE when ref.TRANSREFID IS not null then     
+             case when ref.CostAmountReference <> 0 then ref.CostAmountReference else p.LineAmount end 
+             else  IT.CostAmountPosted  end 
+      when K.ISKIT = 1 then 0
+          else  it.CostAmountPosted end end  - isnull(spa.REBATE,0)    "Extended Cost",
+cit.CURRENCYCODE "Currency of Transaction",
+cij.PURCHASEORDER "Customer PO Number",
+cij.INVOICEID "Distributor Invoice Number",
+case when cit.LINENUM is null then 0 else CASE when K.ISKIT IS null then cit.LINENUM else
+          minline + SL.LineNum - round(SL.LineNum,0) end end   "Distributor Invoice Item",
+cast((year(cij.InvoiceDate)*10000+month(cij.InvoiceDate)*100+day(cij.InvoiceDate)) as integer) "Distributor Invoice Date",
+' ' "Agreement Number",                                                                   
+cast((year(SL.createdDateTime)*10000+month(SL.createdDateTime)*100+day(SL.createdDateTime)) as integer) "Customer Order Date",
+cast((year(SL.ReceiptDateRequested)*10000+month(SL.ReceiptDateRequested)*100+day(SL.ReceiptDateRequested)) as integer) "Customer Want Date",
+cast((year(cit.InvoiceDate)*10000+month(cit.InvoiceDate)*100+day(cit.InvoiceDate)) as integer) "Customer Ship Date",
+' ' "RA Order Number",                                                                   
+' ' "RA Order Line Item"  
+
+-- test spa
+,'Extra Columns to Test' Testing
+,spa.SPRAID, spa.REBATE
+,case when it.CostAmountPosted is null then 0
+     else CASE when K.ISKIT IS null then 
+         CASE when ref.TRANSREFID IS not null then     
+             case when ref.CostAmountReference <> 0 then ref.CostAmountReference else p.LineAmount end 
+             else  IT.CostAmountPosted  end 
+      when K.ISKIT = 1 then 0
+          else  it.CostAmountPosted end end "Extended Cost Original"
+,pd.AMOUNT  'Purchprice'  , cit.Qty*pd.AMOUNT 'ExtendedPurchPrice'
+, cit.itemid 'NHPItemId'
+FROM CUSTINVOICEjour  CIJ
+left outer join CUSTINVOICEtrans  CIT
+on CIJ.DATAAREAID  =CIT.DATAAREAID
+and  CIJ.InvoiceId = CIT.InvoiceId 
+left outer join NSPRAINQUIRY spa on spa.DATAAREAID = cit.DATAAREAID and spa.INVOICEID = cit.INVOICEID and spa.INVENTTRANSID = cit.INVENTTRANSID
+--
+left outer join custTable co on co.DATAAREAID = cij.DATAAREAID and CIJ.OrderAccount = co.ACCOUNTNUM
+
+left outer join custTable c on c.DATAAREAID = cij.DATAAREAID and CIJ.InvoiceAccount = c.ACCOUNTNUM
+left outer Join  (select dp.DATAAREAID ,dp.PARTYID ,ad.type
+,ad.street ,ad.ZIPCODE ,ad.COUNTY ,ad.City 
+  ,ad.CountryRegionId ,ad.State 
+from DIRPARTYADDRESSRELATIONSHIP  dp  
+left outer Join DirPartyAddressRelationshi1066  m on   m.DATAAREAID = dp.DATAAREAID 
+ and  m.PARTYADDRESSRELATIONSHIPRECID = dp.recid
+ Join  ADDRESS ad on ad.RECID = m.addressrecid and ad.type = 1) a 
+ on   a.DATAAREAID = c.DATAAREAID  and a.PARTYID  = c.PARTYID
+left outer join DIMENSIONS dim on dim.DIMENSIONCODE = 0 and dim.dataareaid = c.dataareaid and c.dimension  = dim.num  
+left outer join InventSite s on c.DATAAREAID = s.DATAAREAID and c.DIMENSION = s.DIMENSION
+left outer join  (SELECT  IT.DATAAREAID,
+IT.InventTransId,  IT.INVOICEID,
+IT.ItemId ,
+ID.INVENTLOCATIONID ,
+ID.INVENTSITEID ,
+sum(IT.Qty*-1) "Qty" ,
+Sum(IT.CostAmountPosted*-1) "CostAmountPosted"
+ from  InventTrans IT
+left outer join  INventDim ID
+ on ID.DATAAREAID = IT.DATAAREAID
+and  ID.INVENTDIMID =IT.INVENTDIMID
+where IT.DATAAREAID = 'NZ'  
+group by IT.DATAAREAID, IT.InventTransId, IT.INVOICEID,
+ IT.ItemId , ID.INVENTLOCATIONID , ID.INVENTSITEID
+) IT
+on  CIT.DATAAREAID = IT.DATAAREAID
+and CIT.InventTransId = IT.InventTransId
+and  CIT.INVOICEID = IT.INVOICEID
+left outer join  SalesLine SL
+on CIT.DATAAREAID = SL.DATAAREAID
+and CIT.InventTransId = SL.InventTransId
+join inventtable i on i.DATAAREAID = cij.DATAAREAID and i.itemid = cit.itemid
+left outer join CustVendExternalItem vi on i.DATAAREAID = vi.DATAAREAID and
+i.itemid = vi.itemid and i.primaryvendorid = vi.CUSTVENDRELATION
+left outer join (SELECT CIJ.InvoiceId  KitInv
+,CIJ.SalesId  KitOrd
+,ROUND(SL.LineNum,0)   KitOrdNum
+,sum(CIT.LineAmountMST) KitSales
+ ,sum(case when k.ISKIT = 1  then 0 else CostAmountPosted end) KitCompCost , MIN(cit.LINENUM) "MinLine"
+FROM CUSTINVOICEjour  CIJ
+left outer join CUSTINVOICEtrans  CIT
+on CIJ.DATAAREAID  =CIT.DATAAREAID
+and  CIJ.InvoiceId = CIT.InvoiceId 
+left outer join  (SELECT  IT.DATAAREAID,
+IT.InventTransId,  IT.INVOICEID,
+IT.ItemId ,
+ID.INVENTLOCATIONID ,
+ID.INVENTSITEID ,
+sum(IT.Qty*-1) "Qty" ,
+Sum(IT.CostAmountPosted*-1) "CostAmountPosted"
+ from  InventTrans IT
+left outer join  INventDim ID
+ on ID.DATAAREAID = IT.DATAAREAID
+and  ID.INVENTDIMID =IT.INVENTDIMID
+where IT.DATAAREAID = 'NZ'  
+group by IT.DATAAREAID, IT.InventTransId, IT.INVOICEID,
+ IT.ItemId , ID.INVENTLOCATIONID , ID.INVENTSITEID
+) IT
+on  CIT.DATAAREAID = IT.DATAAREAID
+and CIT.InventTransId = IT.InventTransId
+and  CIT.INVOICEID = IT.INVOICEID
+left outer join  SalesLine SL
+on CIT.DATAAREAID = SL.DATAAREAID
+and CIT.InventTransId = SL.InventTransId
+join inventtable i on i.DATAAREAID = cij.DATAAREAID and i.itemid = cit.itemid
+left outer join CustVendExternalItem vi on i.DATAAREAID = vi.DATAAREAID and
+i.itemid = vi.itemid and i.primaryvendorid = vi.CUSTVENDRELATION
+join AXTKIT_KITLINE k
+   on CIT.DATAAREAID = k.DATAAREAID and CIT.InventTransId = k.InventTransId
+where CIJ.DATAAREAID = 'NZ'
+group by CIJ.InvoiceId ,CIJ.SalesId, ROUND(SL.LineNum,0)
+ ) kit on CIJ.InvoiceId = KitInv and CIJ.SalesId = KitOrd
+and ROUND(SL.LineNum,0) =  KitOrdNum
+left outer join AXTKIT_KITLINE k
+   on CIT.DATAAREAID = k.DATAAREAID and CIT.InventTransId = k.InventTransId
+and CIT.InventTransId = SL.InventTransId
+left outer 
+join (
+SELECT  IT.DATAAREAID,
+IT.InventTransId,  IT.INVOICEID,
+IT.ItemId ,
+ID.INVENTLOCATIONID ,
+ID.INVENTSITEID , it.INVENTREFTRANSID,  ir.TRANSREFID,
+sum(IT.Qty) "RefQty" ,
+Sum(IT.CostAmountPosted+it.COSTAMOUNTADJUSTMENT) "RefCostAmountPosted" ,
+Sum(case when ir.InventTransId is null then 0 else Ir.CostAmountPosted+ir.COSTAMOUNTADJUSTMENT end) "CostAmountReference"  
+ from   InventTrans IT
+  join INVENTTABLE i on IT.ItemId = i.ITEMID and i.DATAAREAID = IT.DATAAREAID
+ and i.ItemGroupId = 'Service' and  i.ModelGroupId = 'Service' and   i.DimGroupId = 'Service'  
+left outer join   INventDim ID
+ on ID.DATAAREAID = IT.DATAAREAID
+and  ID.INVENTDIMID =IT.INVENTDIMID
+join InventTrans IR
+on IT.DATAAREAID = IR.DATAAREAID
+and   ir.InventTransId = it.INVENTREFTRANSID
+where IT.DATAAREAID = 'NZ'
+group by IT.DATAAREAID, IT.InventTransId, IT.INVOICEID,
+ IT.ItemId , ID.INVENTLOCATIONID , ID.INVENTSITEID, it.INVENTREFTRANSID,  ir.TRANSREFID
+) ref   on  CIT.DATAAREAID = ref.DATAAREAID
+and CIT.InventTransId = ref.InventTransId
+and  CIT.INVOICEID = ref.INVOICEID
+ left outer join PurchLine p on p.PurchId = ref.TRANSREFID    and ref.INVENTREFTRANSID = p.InventTransId  and p.DATAAREAID = cij.DATAAREAID
+ left outer join PriceDiscTable pd on pd.DATAAREAID = cij.DATAAREAID 
+ and   pd.[ITEMCODE] = 0 and pd.[ACCOUNTCODE] = 0 and pd.[RELATION] = 0  --  code = 0 means ID not group, Relation 0 = Purchase Price
+  and  pd.ACCOUNTRELATION = i.PRIMARYVENDORID and  pd.[ITEMRELATION] = cit.itemid
+  and cij.InvoiceDate between  pd.[FROMDATE]  and  pd.[TODATE]
+
+
+where CIJ.DATAAREAID = 'NZ' and  i.primaryvendorid in ('154', '623')
+and (K.ISKIT <> 1 or K.ISKIT is null)
+--and cij.InvoiceDate  between cast(? as  datetime) and cast(? as datetime) 
+and cij.InvoiceDate  between cast('2017-06-05' as  datetime) and cast('2017-06-11' as datetime) 
+and cij.invoiceid not like 'CIN%'
+

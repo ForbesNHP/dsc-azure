@@ -1,0 +1,10 @@
+This is the first commit - VL
+
+Local Content
+
+We all use the web in different ways. Mozilla is dedicated to helping you build 
+a web that’s relevant to your friends, family, business or community.
+Free Forever
+
+Mozilla is a non-profit organization and these open-source tools are created by 
+a global community. They will always be 100% free — now and forever!
