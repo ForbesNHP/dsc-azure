@@ -11,4 +11,12 @@ Free Forever
 Mozilla is a non-profit organization and these open-source tools are created by 
 a global community. They will always be 100% free — now and forever!
 
-spider man  iron man is better
+spider man  iron man is better, bat man is cool as well.
+
+
+Resolving Conflicts
+If the two branches you're trying to merge both changed the same part of the 
+same file, Git won't be able to figure out which version to use. When such a 
+situation occurs, it stops right before the merge commit so that you can 
+resolve the conflicts manually.
+
